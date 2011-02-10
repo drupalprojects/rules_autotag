@@ -1,0 +1,6 @@
+; $Id$
+name = Rules Autotag
+description = Provides a simple action for extracting terms form a text.
+package = Rules
+core = 7.x
+dependencies[] = rules
