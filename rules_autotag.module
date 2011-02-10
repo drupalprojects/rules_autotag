@@ -1,2 +1,111 @@
 <?php
 // $Id$
+
+
+/**
+* Implements hook_rules_action_info().
+*/
+function rules_autotag_rules_action_info() {
+  return array(
+    'rules_autotag_action' => array(
+      'base' => 'rules_autotag_action',
+      'label' => t('Rules Autotag Content'),
+      'group' => t('Rules Autotag'),
+      'parameter' => array(
+        'text' => array('type' => 'text', 'label' => t('The text for extracting terms')),
+        'vocabulary' => array('type' => 'taxonomy_vocabulary', 'label' => t('The vocabulary used for extraction')),
+      ),
+      'provides' => array(
+        'extraced_terms' => array(
+          'type' => 'list<taxonomy_term>',
+          'label' => t('Extracted terms'),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Rules action for extracting terms
+ */
+function rules_autotag_action($text, $vocabulary) {
+  $extracted_tids = array();
+  $terms = rules_autotag_get_term_names($vocabulary);
+
+  $text = rules_autotag_clean_text($text);
+  $text_tokens = array_flip(rules_autotag_split_text($text));
+
+  $matchings_term_splits = array_intersect_key($terms, $text_tokens);
+
+  // Loops over all matched splits and checks if a term name consists
+  // of multiple splits. If so, an additional text parsing for the whole
+  // term name is performed.
+  $skip_tids = array();
+  foreach ($matchings_term_splits as $results) {
+    foreach ($results as $tid => $result) {
+      if (!in_array($tid, $extracted_tids) && !in_array($tid, $skip_tids)) {
+        if ($result['splitted']) {
+          if (strpos($text, $result['original_term_name']) !== FALSE) {
+            $extracted_tids[] = $tid;
+          }
+          else {
+            // not found, don't search the same for another split.
+            $skip_tids[] = $tid;
+          }
+        }
+        else {
+          $extracted_tids[] = $tid;
+        }
+      }
+    }
+  }
+
+  return array('extraced_terms' => $extracted_tids);
+}
+
+/**
+ * Returns an array of terms, keyed by splitted term names
+ */
+function rules_autotag_get_term_names($vocabulary) {
+  $terms = array();
+  $result = db_select('taxonomy_term_data', 't')
+    ->fields('t')
+    ->condition('t.vid', $vocabulary->vid)
+    ->execute();
+
+  foreach ($result as $term) {
+    $name = rules_autotag_clean_term($term->name);
+    $term_name_splits = rules_autotag_split_text($name);
+    foreach ($term_name_splits as $split) {
+      $terms[$split][$term->tid] = array(
+        'tid' => $term->tid,
+        'splitted' => (count($term_name_splits) > 1) ? TRUE : FALSE,
+        'original_term_name' => $name,
+      );
+    }
+  }
+  return $terms;
+}
+
+/**
+ * converts term names to lower case
+ */
+function rules_autotag_clean_term($text) {
+  return strtolower($text);
+}
+
+/**
+ * removes tags from a text and converts it to lower case
+ */
+function rules_autotag_clean_text($text) {
+  $text = strip_tags($text);
+  $text = strtolower($text);
+  return $text;
+}
+
+/**
+ * Splits a given text and into separate words and returns them as array
+ */
+function rules_autotag_split_text($text) {
+  return preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text); 
+}
