@@ -1,34 +1,18 @@
 <?php
 // $Id$
 
-
 /**
-* Implements hook_rules_action_info().
-*/
-function rules_autotag_rules_action_info() {
-  return array(
-    'rules_autotag_action' => array(
-      'base' => 'rules_autotag_action',
-      'label' => t('Rules Autotag Content'),
-      'group' => t('Rules Autotag'),
-      'parameter' => array(
-        'text' => array('type' => 'text', 'label' => t('The text for extracting terms')),
-        'vocabulary' => array('type' => 'taxonomy_vocabulary', 'label' => t('The vocabulary used for extraction')),
-      ),
-      'provides' => array(
-        'extraced_terms' => array(
-          'type' => 'list<taxonomy_term>',
-          'label' => t('Extracted terms'),
-        ),
-      ),
-    ),
-  );
-}
-
-/**
- * Rules action for extracting terms
+ * Extract terms.
+ *
+ * @param $text
+ *   The text being parsed by the extractor.
+ * @param $vocabulary
+ *   Vocabulary defining terms which should be extracted.
+ *
+ * @return
+ *   An array of tids.
  */
-function rules_autotag_action($text, $vocabulary) {
+function rules_autotag_extract($text, $vocabulary) {
   $extracted_tids = array();
   $terms = rules_autotag_get_term_names($vocabulary);
 
@@ -49,7 +33,7 @@ function rules_autotag_action($text, $vocabulary) {
             $extracted_tids[] = $tid;
           }
           else {
-            // not found, don't search the same for another split.
+            // Not found, do not search the same for another split.
             $skip_tids[] = $tid;
           }
         }
@@ -59,12 +43,11 @@ function rules_autotag_action($text, $vocabulary) {
       }
     }
   }
-
-  return array('extraced_terms' => $extracted_tids);
+  return $extracted_tids;
 }
 
 /**
- * Returns an array of terms, keyed by splitted term names
+ * Returns an array of terms, keyed by splitted term names.
  */
 function rules_autotag_get_term_names($vocabulary) {
   $terms = array();
@@ -88,14 +71,14 @@ function rules_autotag_get_term_names($vocabulary) {
 }
 
 /**
- * converts term names to lower case
+ * Converts term names to lower case.
  */
 function rules_autotag_clean_term($text) {
   return strtolower($text);
 }
 
 /**
- * removes tags from a text and converts it to lower case
+ * Removes tags from a text and converts it to lower case.
  */
 function rules_autotag_clean_text($text) {
   $text = strip_tags($text);
@@ -104,8 +87,8 @@ function rules_autotag_clean_text($text) {
 }
 
 /**
- * Splits a given text and into separate words and returns them as array
+ * Splits a given text and into separate words and returns them as array.
  */
 function rules_autotag_split_text($text) {
-  return preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text); 
+  return preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text);
 }
