@@ -16,7 +16,7 @@ function rules_autotag_default_rules_configuration() {
           "type" : "taxonomy_vocabulary",
           "label" : "The vocabulary used for extraction"
         },
-        "target_terms" : { "type" : "list\u003ctaxonomy_term\u003e", "label" : "Target list for storing extracted terms" }
+        "target_terms" : { "type" : "list\u003ctaxonomy_term\u003e", "label" : "Target list for storing extracted terms", "save" : true }
       },
       "ACTION SET" : [
         { "rules_autotag_extract" : {
