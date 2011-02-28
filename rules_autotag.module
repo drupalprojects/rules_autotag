@@ -25,7 +25,8 @@ function rules_autotag_extract($text, $vocabulary) {
   // term name is performed.
   $skip_tids = array();
   foreach ($matchings_term_splits as $results) {
-    foreach ($results as $tid => $result) {
+    foreach ($results as $result) {
+      $tid = $result['tid'];
       if (!in_array($tid, $extracted_tids) && !in_array($tid, $skip_tids)) {
         if ($result['splitted']) {
           if (strpos($text, $result['original_term_name']) !== FALSE) {
@@ -47,6 +48,9 @@ function rules_autotag_extract($text, $vocabulary) {
 
 /**
  * Returns an array of terms, keyed by splitted term names.
+ *
+ * The structure can be modified with hook_rules_autotag_terms_alter()
+ * implementations.
  */
 function rules_autotag_get_term_names($vocabulary) {
   $terms = array();
@@ -56,17 +60,33 @@ function rules_autotag_get_term_names($vocabulary) {
     ->execute();
 
   foreach ($result as $term) {
-    $name = rules_autotag_clean_term($term->name);
-    $term_name_splits = rules_autotag_split_text($name);
-    foreach ($term_name_splits as $split) {
-      $terms[$split][$term->tid] = array(
-        'tid' => $term->tid,
-        'splitted' => (count($term_name_splits) > 1) ? TRUE : FALSE,
-        'original_term_name' => $name,
-      );
-    }
+    rules_autotag_build_names_array($terms, $term->name, $term->tid);
   }
+
+  drupal_alter('rules_autotag_terms', $terms, $vocabulary);
   return $terms;
+}
+
+/**
+ * Helper function for generating the term names array.
+ *
+ * @param $terms
+ *   An array of terms, where the new name is going to be added.
+ * @param $name
+ *   The name (term name, synonym, ...) to add.
+ * @param $tid
+ *   The corresponding term id.
+ */
+function rules_autotag_build_names_array(&$terms, $name, $tid) {
+  $name = rules_autotag_clean_term($name);
+  $name_splits = rules_autotag_split_text($name);
+  foreach ($name_splits as $split) {
+    $terms[$split][] = array(
+      'tid' => $tid,
+      'splitted' => (count($name_splits) > 1) ? TRUE : FALSE,
+      'original_term_name' => $name,
+    );
+  }
 }
 
 /**
@@ -90,4 +110,25 @@ function rules_autotag_clean_text($text) {
  */
 function rules_autotag_split_text($text) {
   return preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text);
+}
+
+/**
+ * Implementation of hook_rules_autotag_terms_alter().
+ */
+function rules_autotag_rules_autotag_terms_alter(&$terms, $vocabulary) {
+  // Adds synonyms to terms array structure.
+  if (module_exists('synonyms')) {
+    $field_info = field_info_field('synonyms_synonym');
+    if (isset($field_info['bundles']['taxonomy_term']) && in_array($vocabulary->machine_name, $field_info['bundles']['taxonomy_term'])) {
+      $query = db_select('field_data_synonyms_synonym', 's');
+      $query ->join('taxonomy_term_data', 'd', 'd.tid = s.entity_id');
+      $result = $query->fields('s', array('entity_id', 'synonyms_synonym_value'))
+        ->condition('d.vid', $vocabulary->vid)
+        ->execute();
+
+      foreach ($result as $row) {
+        rules_autotag_build_names_array($terms, $row->synonyms_synonym_value, $row->entity_id);
+      }
+    }
+  }
 }
