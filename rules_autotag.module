@@ -98,8 +98,11 @@ function rules_autotag_clean_term($text) {
 
 /**
  * Removes tags from a text and converts it to lower case.
+ * Additionally content from CDATA tags is extracted and added to the text.
  */
 function rules_autotag_clean_text($text) {
+  preg_match_all('/<!\[CDATA\[(.*?)\]\]>/is', $text, $matches);
+  $text = str_replace($matches[0], $matches[1], $text);
   $text = strip_tags($text);
   $text = strtolower($text);
   return $text;
