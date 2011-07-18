@@ -53,18 +53,22 @@ function rules_autotag_extract($text, $vocabulary) {
  * implementations.
  */
 function rules_autotag_get_term_names($vocabulary) {
-  $terms = array();
-  $result = db_select('taxonomy_term_data', 't')
-    ->fields('t')
-    ->condition('t.vid', $vocabulary->vid)
-    ->execute();
+  $terms = &drupal_static(__FUNCTION__ . ':terms', array());
 
-  foreach ($result as $term) {
-    rules_autotag_build_names_array($terms, $term->name, $term->tid);
+  if (!isset($terms[$vocabulary->vid])) {
+    $terms[$vocabulary->vid] = array();
+    $result = db_select('taxonomy_term_data', 't')
+      ->fields('t')
+      ->condition('t.vid', $vocabulary->vid)
+      ->execute();
+
+    foreach ($result as $term) {
+      rules_autotag_build_names_array($terms[$vocabulary->vid], $term->name, $term->tid);
+    }
+
+    drupal_alter('rules_autotag_terms', $terms[$vocabulary->vid], $vocabulary);
   }
-
-  drupal_alter('rules_autotag_terms', $terms, $vocabulary);
-  return $terms;
+  return $terms[$vocabulary->vid];
 }
 
 /**
