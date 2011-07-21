@@ -23,18 +23,13 @@ function rules_autotag_extract($text, $vocabulary) {
   // Loops over all matched splits and checks if a term name consists
   // of multiple splits. If so, an additional text parsing for the whole
   // term name is performed.
-  $skip_tids = array();
   foreach ($matchings_term_splits as $results) {
     foreach ($results as $result) {
       $tid = $result['tid'];
-      if (!in_array($tid, $extracted_tids) && !in_array($tid, $skip_tids)) {
+      if (!in_array($tid, $extracted_tids)) {
         if ($result['splitted']) {
           if (strpos($text, $result['original_term_name']) !== FALSE) {
             $extracted_tids[] = $tid;
-          }
-          else {
-            // Not found, do not search the same for another split.
-            $skip_tids[] = $tid;
           }
         }
         else {
