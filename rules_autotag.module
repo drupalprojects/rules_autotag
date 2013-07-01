@@ -115,22 +115,73 @@ function rules_autotag_split_text($text) {
 }
 
 /**
- * Implementation of hook_rules_autotag_terms_alter().
+ * Implements hook_rules_autotag_terms_alter().
  */
 function rules_autotag_rules_autotag_terms_alter(&$terms, $vocabulary) {
   // Adds synonyms to terms array structure.
   if (module_exists('synonyms')) {
-    $field_info = field_info_field('synonyms_synonym');
-    if (isset($field_info['bundles']['taxonomy_term']) && in_array($vocabulary->machine_name, $field_info['bundles']['taxonomy_term'])) {
-      $query = db_select('field_data_synonyms_synonym', 's');
-      $query ->join('taxonomy_term_data', 'd', 'd.tid = s.entity_id');
-      $result = $query->fields('s', array('entity_id', 'synonyms_synonym_value'))
-        ->condition('d.vid', $vocabulary->vid)
-        ->execute();
-
-      foreach ($result as $row) {
-        rules_autotag_build_names_array($terms, $row->synonyms_synonym_value, $row->entity_id);
+    $fields = synonyms_synonyms_fields($vocabulary);
+    if (empty($fields)) {
+      return;
+    }
+    // In case there is only one text field, directly query the database which
+    // is much more efficient.
+    if (count($fields) == 1) {
+      $field_name = $fields[0];
+      $field = field_info_field($field_name);
+      if (isset($field['type']) && $field['type'] == 'text' && isset($field['storage']['type']) && $field['storage']['type'] == 'field_sql_storage') {
+        rules_autotag_synonyms_merge_text_field($terms, $vocabulary, $field);
+        return;
       }
+    }
+    // Else we have to use the Synonyms API and load each term separately.
+    rules_autotag_synonyms_merge_synonyms($terms, $vocabulary);
+  }
+}
+
+/**
+ * Helper function that queries a single text field and merges the results into
+ * the $terms array.
+ *
+ * This function bypasses the Synonyms API, but is much more efficient, as an
+ * entity load of each term is avoided.
+ */
+function rules_autotag_synonyms_merge_text_field(&$terms_array, $vocabulary, $field) {
+  $storage_info = $field['storage']['details']['sql'][FIELD_LOAD_CURRENT];
+  $keys = array_keys($storage_info);
+  $table = array_pop($keys);
+  $value_field = $storage_info[$table]['value'];
+
+  $query = db_select($table, 's');
+  $query ->join('taxonomy_term_data', 'd', 'd.tid = s.entity_id');
+  $result = $query->fields('s', array('entity_id', $value_field))
+    ->condition('d.vid', $vocabulary->vid)
+    ->execute();
+  foreach ($result as $row) {
+    rules_autotag_build_names_array($terms_array, $row->{$value_field}, $row->entity_id);
+  }
+}
+
+/**
+ * Helper function that loads all synonyms for the terms and merges it into the
+ * $term array.
+ *
+ * This function uses the Synonyms API. So all features from the Synonyms module
+ * are supported, but loading can take a while for a huge vocabulary.
+ */
+function rules_autotag_synonyms_merge_synonyms(&$terms_array, $vocabulary) {
+  $tids = array();
+  // Extract all the term ids from the list
+  foreach ($terms_array as $names) {
+    foreach ($names as $name) {
+      $tids[$name['tid']] = $name['tid'];
+    }
+  }
+  $terms = taxonomy_term_load_multiple($tids);
+  foreach ($terms as $term) {
+    $synonyms = synonyms_get_term_synonyms($term);
+    foreach ($synonyms as $synonym) {
+      rules_autotag_build_names_array($terms_array, $synonym['value'], $term->tid);
     }
   }
 }
