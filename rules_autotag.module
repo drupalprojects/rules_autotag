@@ -104,6 +104,7 @@ function rules_autotag_clean_text($text) {
   $text = str_replace($matches[0], $matches[1], $text);
   $text = strip_tags($text);
   $text = strtolower($text);
+  $text = trim($text);
   return $text;
 }
 

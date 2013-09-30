@@ -49,7 +49,6 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
   }
 
   public function testTagging() {
-     $text = "Term1 Term2";
      $action = rules_action('rules_autotag_extract');
      list($terms) = $action->execute($this->text, $this->vocabulary);
 
@@ -62,5 +61,7 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
      $this->assertTrue(in_array($this->term2->tid, $tids), t('Lower term name found.'));
      $this->assertFalse(in_array($this->term3->tid, $tids), t('Term correctly not found.'));
      $this->assertTrue(in_array($this->term4->tid, $tids), t('Compound term name found.'));
+
+     $this->assertEqual(rules_autotag_clean_text(' test '), 'test', 'Input text is trimmed before processing.');
   }
 }
