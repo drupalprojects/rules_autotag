@@ -50,12 +50,6 @@ function rules_autotag_feeds_set_target($source, $entity, $target, $terms, $mapp
       }
     }
   }
-
-  $field = isset($entity->$target) ? $entity->$target : array(LANGUAGE_NONE => array());
-
-  // Allow for multiple mappings to the same target.
-  $delta = count($field[LANGUAGE_NONE]);
-
   $extracted_tids = array();
 
   foreach ($cache['allowed_vocabularies'][$target] as $vid => $vocabulary) {
@@ -63,11 +57,18 @@ function rules_autotag_feeds_set_target($source, $entity, $target, $terms, $mapp
       $extracted_tids = array_merge(rules_autotag_extract($text, $vocabulary), $extracted_tids);
     }
   }
+  // Allow for multiple mappings to the same target.
+  $field = isset($entity->$target) ? $entity->$target : array(LANGUAGE_NONE => array());
 
+  // Take any existing terms in the field into account.
+  foreach ($field[LANGUAGE_NONE] as $item) {
+    $extracted_tids[] = $item['tid'];
+  }
   // Remove duplicated term IDs so that a term is only saved once in the field.
   $extracted_tids = array_unique($extracted_tids);
+  $field[LANGUAGE_NONE] = array();
   foreach ($extracted_tids as $tid) {
-    $field[LANGUAGE_NONE][$delta++] = array('tid' => $tid);
+    $field[LANGUAGE_NONE][]['tid'] = $tid;
   }
 
   $entity->$target = $field;
