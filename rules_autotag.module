@@ -55,6 +55,7 @@ function rules_autotag_get_term_names($vocabulary) {
     $result = db_select('taxonomy_term_data', 't')
       ->fields('t')
       ->condition('t.vid', $vocabulary->vid)
+      ->addTag('rules_autotag_terms')
       ->execute();
 
     foreach ($result as $term) {
