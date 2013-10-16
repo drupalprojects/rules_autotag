@@ -58,7 +58,7 @@ function rules_autotag_feeds_set_target($source, $entity, $target, $terms, $mapp
     }
   }
   // Allow for multiple mappings to the same target.
-  $field = isset($entity->$target) ? $entity->$target : array(LANGUAGE_NONE => array());
+  $field = empty($entity->$target) ? array(LANGUAGE_NONE => array()) : $entity->$target;
 
   // Take any existing terms in the field into account.
   foreach ($field[LANGUAGE_NONE] as $item) {
