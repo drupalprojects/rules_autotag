@@ -44,9 +44,11 @@ function hook_rules_autotag_terms_alter(&$terms, $vocabulary) {
 function hook_query_rules_autotag_terms_alter($query) {
   // Join the original term query from rules_autotag with our field table to
   // exclude terms that should not be tagged.
-  $query->leftJoin('field_data_field_dont_autotag', 'fd', 't.tid = fd.entity_id');
-  $query->condition('fd.entity_type', 'taxonomy_term');
-  $query->condition('fd.field_dont_autotag_value', '1', '<>');
+  $query->leftJoin('field_data_field_dont_autotag', 'fd', "t.tid = fd.entity_id AND fd.entity_type = 'taxonomy_term'");
+  $query->condition(
+    db_or()
+      ->condition('fd.field_dont_autotag_value', NULL)
+      ->condition('fd.field_dont_autotag_value', '1', '<>'));
 }
 
 /**
