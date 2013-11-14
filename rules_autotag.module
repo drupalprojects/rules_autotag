@@ -113,7 +113,8 @@ function rules_autotag_clean_text($text) {
  * Splits a given text and into separate words and returns them as array.
  */
 function rules_autotag_split_text($text) {
-  return preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text);
+  // Filter out any remaining empty strings after the split.
+  return array_filter(preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text));
 }
 
 /**
