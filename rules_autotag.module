@@ -93,7 +93,7 @@ function rules_autotag_build_names_array(&$terms, $name, $tid) {
  * Converts term names to lower case.
  */
 function rules_autotag_clean_term($text) {
-  return strtolower($text);
+  return drupal_strtolower($text);
 }
 
 /**
@@ -104,17 +104,24 @@ function rules_autotag_clean_text($text) {
   preg_match_all('/<!\[CDATA\[(.*?)\]\]>/is', $text, $matches);
   $text = str_replace($matches[0], $matches[1], $text);
   $text = strip_tags($text);
-  $text = strtolower($text);
+  $text = drupal_strtolower($text);
   $text = trim($text);
   return $text;
 }
 
 /**
  * Splits a given text and into separate words and returns them as array.
+ *
+ * @param string $text
+ *   The text to split, UTF-8 encoded.
  */
 function rules_autotag_split_text($text) {
+  // We want to split around words, symbols and numbers, therefore we use
+  // unicode character properties to detect marks, punctuation, separators and
+  // other characters we want to ignore.
+  // See http://www.php.net/manual/en/regexp.reference.unicode.php
   // Filter out any remaining empty strings after the split.
-  return array_filter(preg_split("/[\s,.:\-\(\)\[\]{}*\/]+/", $text));
+  return array_filter(preg_split("/[\pC\pM\pP\pZ]+/u", $text));
 }
 
 /**

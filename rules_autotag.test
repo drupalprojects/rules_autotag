@@ -43,9 +43,14 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
     $this->term4->name = "Compound name";
     $this->term4->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term4);
+
+    $this->term5 = new stdClass();
+    $this->term5->name = "Word-with-dash";
+    $this->term5->vid = $this->vocabulary->vid;
+    taxonomy_term_save($this->term5);
     
     // Define text.
-    $this->text = "adsf werqwer Term1 term2 xycvyx Compound name";
+    $this->text = "adsf werqwer Term1 term2 xycvyx Compound name Word-with-dash";
   }
 
   public function testTagging() {
@@ -61,9 +66,12 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
      $this->assertTrue(in_array($this->term2->tid, $tids), t('Lower term name found.'));
      $this->assertFalse(in_array($this->term3->tid, $tids), t('Term correctly not found.'));
      $this->assertTrue(in_array($this->term4->tid, $tids), t('Compound term name found.'));
+     $this->assertTrue(in_array($this->term5->tid, $tids), t('Term name with dashes found.'));
 
      $this->assertEqual(rules_autotag_clean_text(' test '), 'test', 'Input text is trimmed before processing.');
 
      $this->assertEqual(rules_autotag_split_text('1234 Test (XY)'), array('1234', 'Test', 'XY'), 'No empty strings in splitted text array.');
+     $this->assertEqual(array_values(rules_autotag_split_text('"green cars"')), array('green', 'cars'), 'Quotes get splitted out correctly.');
+     $this->assertEqual(rules_autotag_split_text('änderung macht spaß?'), array('änderung', 'macht', 'spaß'), 'Words with German umlauts get splitted correctly.');
   }
 }
