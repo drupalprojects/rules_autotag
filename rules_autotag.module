@@ -195,3 +195,39 @@ function rules_autotag_synonyms_merge_synonyms(&$terms_array, $vocabulary) {
     }
   }
 }
+
+/**
+ * Matches a given text against a vocabulary and returns an equal term.
+ *
+ * This is largely a copy of rules_autotag_extract() with the difference that
+ * the text has to exactly match a term name (or synonym).
+ *
+ * @param string $text
+ *   The text to match.
+ * @param object $vocabulary
+ *   Vocabulary defining terms which should be compared.
+ *
+ * @return int|FALSE
+ *   The term ID or FALSE if no equal term exists in the vocabulary.
+ */
+function rules_autotag_exact_match($text, $vocabulary) {
+  $terms = rules_autotag_get_term_names($vocabulary);
+
+  $text = rules_autotag_clean_text($text);
+  $text_tokens = array_flip(rules_autotag_split_text($text));
+
+  $matchings_term_splits = array_intersect_key($terms, $text_tokens);
+
+  // Search for an exactly matching term name and return that immediately.
+  foreach ($matchings_term_splits as $name => $results) {
+    foreach ($results as $result) {
+      if ($name == $text) {
+        return $result['tid'];
+      }
+      if ($result['splitted'] && $result['original_term_name'] == $text) {
+        return $result['tid'];
+      }
+    }
+  }
+  return FALSE;
+}
