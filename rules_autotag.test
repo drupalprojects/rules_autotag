@@ -90,10 +90,16 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
        'HTML in CDATA wrapper gets split up correctly.'
      );
 
+     // Test that parts of a term name do not yield results.
+     $tids = rules_autotag_extract('Compound', $this->vocabulary);
+     $this->assertTrue(empty($tids), 'Text containing a part of a term has no results.');
+
      // Test exact matching.
      $tid = rules_autotag_exact_match('Term1 test', $this->vocabulary);
      $this->assertFalse($tid, 'Text containing the word is no exact match.');
      $tid = rules_autotag_exact_match('Term1 ', $this->vocabulary);
      $this->assertEqual($tid, $this->term1->tid, 'Exact match found.');
+     $tid = rules_autotag_exact_match('Compound', $this->vocabulary);
+     $this->assertFalse($tid, 'Text containing a part of a term is no exact match.');
   }
 }

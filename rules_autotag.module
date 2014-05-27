@@ -221,12 +221,9 @@ function rules_autotag_exact_match($text, $vocabulary) {
   $matchings_term_splits = array_intersect_key($terms, $text_tokens);
 
   // Search for an exactly matching term name and return that immediately.
-  foreach ($matchings_term_splits as $name => $results) {
+  foreach ($matchings_term_splits as $results) {
     foreach ($results as $result) {
-      if ($name == $text) {
-        return $result['tid'];
-      }
-      if ($result['splitted'] && $result['original_term_name'] == $text) {
+      if ($result['original_term_name'] == $text) {
         return $result['tid'];
       }
     }
