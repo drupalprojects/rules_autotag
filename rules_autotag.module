@@ -33,7 +33,7 @@ function rules_autotag_extract($text, $vocabulary) {
         if ($result['splitted']) {
           // The compound word needs to be at the start or end of the text or
           // separated by split characters form the other text.
-          if (preg_match('/(^|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)' . preg_quote($result['original_term_name']) . '($|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)/ui', $text)) {
+          if (preg_match('/(^|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)' . preg_quote($result['original_term_name'], '/') . '($|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)/ui', $text)) {
             $extracted_tids[] = $tid;
           }
         }

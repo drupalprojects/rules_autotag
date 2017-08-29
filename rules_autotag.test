@@ -54,6 +54,11 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
     $this->term6->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term6);
 
+    $this->term7 = new stdClass();
+    $this->term7->name = "Befristete Anstellung/";
+    $this->term7->vid = $this->vocabulary->vid;
+    taxonomy_term_save($this->term7);
+
     // Define text.
     $this->text = "adsf werqwer Term1 term2 xycvyx Compound name Word-with-dash";
   }
@@ -102,6 +107,10 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
      // Compound word "Befristete Anstellung" should not match "Unbefristete Anstellung"
      $tids = rules_autotag_extract('Unbefristete Anstellung', $this->vocabulary);
      $this->assertTrue(empty($tids), 'Compound word does not match substring.');
+
+    // Test compound words containing a regex delimiter.
+    $tids = rules_autotag_extract('Befristete Anstellung/', $this->vocabulary);
+    $this->assertTrue(in_array($this->term7->tid, $tids), 'Compound word with regex delimiter correctly matches.');
 
      // Test exact matching.
      $tid = rules_autotag_exact_match('Term1 test', $this->vocabulary);
