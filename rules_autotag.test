@@ -28,17 +28,17 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
     $this->term1->name = "Term1";
     $this->term1->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term1);
-    
+
     $this->term2 = new stdClass();
     $this->term2->name = "Term2";
     $this->term2->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term2);
-    
+
     $this->term3 = new stdClass();
     $this->term3->name = "Term3";
     $this->term3->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term3);
-    
+
     $this->term4 = new stdClass();
     $this->term4->name = "Compound name";
     $this->term4->vid = $this->vocabulary->vid;
@@ -48,7 +48,12 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
     $this->term5->name = "Word-with-dash";
     $this->term5->vid = $this->vocabulary->vid;
     taxonomy_term_save($this->term5);
-    
+
+    $this->term6 = new stdClass();
+    $this->term6->name = "Befristete Anstellung";
+    $this->term6->vid = $this->vocabulary->vid;
+    taxonomy_term_save($this->term6);
+
     // Define text.
     $this->text = "adsf werqwer Term1 term2 xycvyx Compound name Word-with-dash";
   }
@@ -59,7 +64,7 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
 
      $tids = array();
      foreach ($terms as $term) {
-       $tids[] = $term->tid; 
+       $tids[] = $term->tid;
      }
 
      $this->assertTrue(in_array($this->term1->tid, $tids), 'Term found.');
@@ -93,6 +98,10 @@ class RulesAutotagTestCase extends DrupalWebTestCase {
      // Test that parts of a term name do not yield results.
      $tids = rules_autotag_extract('Compound', $this->vocabulary);
      $this->assertTrue(empty($tids), 'Text containing a part of a term has no results.');
+
+     // Compound word "Befristete Anstellung" should not match "Unbefristete Anstellung"
+     $tids = rules_autotag_extract('Unbefristete Anstellung', $this->vocabulary);
+     $this->assertTrue(empty($tids), 'Compound word does not match substring.');
 
      // Test exact matching.
      $tid = rules_autotag_exact_match('Term1 test', $this->vocabulary);

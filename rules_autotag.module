@@ -1,5 +1,9 @@
 <?php
 
+// Pattern for splitting words.
+// @see rules_autotag_split_text()
+define('RULES_AUTOTAG_SPLIT_REGEX', '\pC\pM\pP\pZ');
+
 /**
  * Extract terms.
  *
@@ -14,7 +18,6 @@
 function rules_autotag_extract($text, $vocabulary) {
   $extracted_tids = array();
   $terms = rules_autotag_get_term_names($vocabulary);
-
   $text = rules_autotag_clean_text($text);
   $text_tokens = array_flip(rules_autotag_split_text($text));
 
@@ -28,7 +31,9 @@ function rules_autotag_extract($text, $vocabulary) {
       $tid = $result['tid'];
       if (!in_array($tid, $extracted_tids)) {
         if ($result['splitted']) {
-          if (strpos($text, $result['original_term_name']) !== FALSE) {
+          // The compound word needs to be at the start or end of the text or
+          // separated by split characters form the other text.
+          if (preg_match('/(^|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)' . preg_quote($result['original_term_name']) . '($|[' . RULES_AUTOTAG_SPLIT_REGEX . ']+)/ui', $text)) {
             $extracted_tids[] = $tid;
           }
         }
@@ -123,7 +128,7 @@ function rules_autotag_split_text($text) {
   // other characters we want to ignore.
   // See http://www.php.net/manual/en/regexp.reference.unicode.php
   // Filter out any remaining empty strings after the split.
-  return array_filter(preg_split("/[\pC\pM\pP\pZ]+/u", $text));
+  return array_filter(preg_split("/[" . RULES_AUTOTAG_SPLIT_REGEX . "]+/u", $text));
 }
 
 /**
